@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Job Listing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6 text-center">Create a New Job Listing</h1>
+    <div class="space-y-4">
+        <div>
+            <label for="title" class="block text-sm font-medium text-gray-700">Job Title</label>
+            <input type="text" id="title" placeholder="e.g., Software Engineer" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div>
+            <label for="salary" class="block text-sm font-medium text-gray-700">Salary (USD)</label>
+            <input type="number" id="salary" placeholder="e.g., 100000" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div>
+            <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+            <input type="text" id="location" placeholder="e.g., New Jersey" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <button id="submitBtn" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit Job</button>
+    </div>
+    <p id="responseMessage" class="mt-4 text-center text-sm"></p>
+</div>
+
+<script>
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+        const title = document.getElementById('title').value;
+        const salary = parseFloat(document.getElementById('salary').value);
+        const location = document.getElementById('location').value;
+        const responseMessage = document.getElementById('responseMessage');
+
+        // Basic validation
+        if (!title || isNaN(salary) || !location) {
+            responseMessage.className = 'mt-4 text-center text-sm text-red-600';
+            responseMessage.textContent = 'Please fill out all fields correctly.';
+            return;
+        }
+
+        const jobData = { title, salary, location };
+
+        try {
+            const response = await fetch('http://localhost:8080/jobs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(jobData),
+            });
+
+            if (response.ok) {
+                const result = await response.text();
+                responseMessage.className = 'mt-4 text-center text-sm text-green-600';
+                responseMessage.textContent = result || 'Job added successfully!';
+                // Clear form
+                document.getElementById('title').value = '';
+                document.getElementById('salary').value = '';
+                document.getElementById('location').value = '';
+            } else {
+                const error = await response.text();
+                responseMessage.className = 'mt-4 text-center text-sm text-red-600';
+                responseMessage.textContent = `Error: ${error || response.statusText}`;
+                if (response.status === 405) {
+                    responseMessage.textContent = 'Error: Method Not Allowed. Check if POST is supported for /jobs.';
+                }
+            }
+        } catch (error) {
+            responseMessage.className = 'mt-4 text-center text-sm text-red-600';
+            responseMessage.textContent = `Error: ${error.message}`;
+        }
+    });
+</script>
+</body>
+</html>
