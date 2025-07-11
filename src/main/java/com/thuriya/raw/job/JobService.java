@@ -1,4 +1,4 @@
 package com.thuriya.raw.job;
 
-public class JobService {
+public interface JobService {
 }
