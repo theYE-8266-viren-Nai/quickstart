@@ -8,16 +8,19 @@ import java.util.List;
 @RestController
 @CrossOrigin(origins = "*")
 public class JobController {
-	private List<Job> jobs = new ArrayList<>();
+	public JobController(JobService jobService) {
+		this.jobService = jobService;
+	}
 
+	private  JobService jobService;
 	@GetMapping(path = "/jobs")
 	public List<Job> findAll() {
-		return jobs;
+		return jobService.findAll();
 	}
 
 	@PostMapping(path = "/jobs")
 	public String createJob(@RequestBody Job job) {
-		jobs.add(job);
+		jobService.createJob(job);
 		return "Job added successfully";
 	}
 }

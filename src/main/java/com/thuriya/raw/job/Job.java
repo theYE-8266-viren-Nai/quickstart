@@ -48,6 +48,9 @@ public class Job {
 		this.maxSalary = maxSalary;
 	}
 
+	public void setLocation(String location) {
+		this.location = location;
+	}
 	public String getLocation() {
 		return location;
 	}
@@ -61,7 +64,4 @@ public class Job {
 		this.location = location;
 	}
 
-	public void setLocation(String location) {
-		this.location = location;
-	}
 }
