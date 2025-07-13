@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Job Listing</title>
+    <title>Job Listings</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+<body class="bg-gray-100 min-h-screen p-6">
+<!-- Job Creation Form -->
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg mb-8">
     <h1 class="text-2xl font-bold mb-6 text-center">Create a New Job Listing</h1>
     <div class="space-y-4">
         <div>
@@ -15,8 +16,16 @@
             <input type="text" id="title" placeholder="e.g., Software Engineer" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
         </div>
         <div>
-            <label for="salary" class="block text-sm font-medium text-gray-700">Salary (USD)</label>
-            <input type="number" id="salary" placeholder="e.g., 100000" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea id="description" placeholder="e.g., Develop web applications..." class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" required></textarea>
+        </div>
+        <div>
+            <label for="minSalary" class="block text-sm font-medium text-gray-700">Minimum Salary (USD)</label>
+            <input type="number" id="minSalary" placeholder="e.g., 80000" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div>
+            <label for="maxSalary" class="block text-sm font-medium text-gray-700">Maximum Salary (USD)</label>
+            <input type="number" id="maxSalary" placeholder="e.g., 120000" step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
         </div>
         <div>
             <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
@@ -27,28 +36,99 @@
     <p id="responseMessage" class="mt-4 text-center text-sm"></p>
 </div>
 
+<!-- Job Listings -->
+<div class="max-w-4xl mx-auto">
+    <h2 class="text-xl font-bold mb-4">Available Jobs</h2>
+    <div id="jobList" class="grid gap-4"></div>
+</div>
+
 <script>
+    // Fetch and display all jobs
+    async function fetchJobs() {
+        const jobList = document.getElementById('jobList');
+        jobList.innerHTML = '<p class="text-center text-gray-500">Loading jobs...</p>';
+
+        try {
+            const response = await fetch('http://localhost:8080/jobs', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.ok) {
+                const jobs = await response.json();
+                jobList.innerHTML = '';
+
+                if (jobs.length === 0) {
+                    jobList.innerHTML = '<p class="text-center text-gray-500">No jobs available.</p>';
+                    return;
+                }
+
+                jobs.forEach(job => {
+                    const jobCard = document.createElement('div');
+                    jobCard.className = 'bg-white p-6 rounded-lg shadow-md';
+                    jobCard.innerHTML = `
+                        <h3 class="text-lg font-semibold">${job.title}</h3>
+                        <p class="text-gray-600">${job.description}</p>
+                        <p class="text-gray-600">Salary: $${job.minSalary} - $${job.maxSalary}</p>
+                        <p class="text-gray-600">Location: ${job.location}</p>
+                        <button class="mt-2 text-blue-600 hover:underline" onclick="fetchJobById(${job.id})">View Details</button>
+                    `;
+                    jobList.appendChild(jobCard);
+                });
+            } else {
+                jobList.innerHTML = '<p class="text-center text-red-600">Error loading jobs.</p>';
+            }
+        } catch (error) {
+            jobList.innerHTML = `<p class="text-center text-red-600">Error: ${error.message}</p>`;
+        }
+    }
+
+    // Fetch job by ID
+    async function fetchJobById(id) {
+        try {
+            const response = await fetch(`http://localhost:8080/jobs/${id}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.ok) {
+                const job = await response.json();
+                alert(`Job Details:\nTitle: ${job.title}\nDescription: ${job.description}\nSalary: $${job.minSalary} - $${job.maxSalary}\nLocation: ${job.location}`);
+            } else {
+                alert('Error fetching job details.');
+            }
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    // Handle form submission
     document.getElementById('submitBtn').addEventListener('click', async () => {
         const title = document.getElementById('title').value;
-        const salary = parseFloat(document.getElementById('salary').value);
+        const description = document.getElementById('description').value;
+        const minSalary = parseFloat(document.getElementById('minSalary').value);
+        const maxSalary = parseFloat(document.getElementById('maxSalary').value);
         const location = document.getElementById('location').value;
         const responseMessage = document.getElementById('responseMessage');
 
-        // Basic validation
-        if (!title || isNaN(salary) || !location) {
+        // Validation
+        if (!title || !description || isNaN(minSalary) || isNaN(maxSalary) || !location) {
             responseMessage.className = 'mt-4 text-center text-sm text-red-600';
             responseMessage.textContent = 'Please fill out all fields correctly.';
             return;
         }
+        if (minSalary > maxSalary) {
+            responseMessage.className = 'mt-4 text-center text-sm text-red-600';
+            responseMessage.textContent = 'Minimum salary cannot exceed maximum salary.';
+            return;
+        }
 
-        const jobData = { title, salary, location };
+        const jobData = { title, description, minSalary: minSalary.toString(), maxSalary: maxSalary.toString(), location };
 
         try {
             const response = await fetch('http://localhost:8080/jobs', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(jobData),
             });
 
@@ -58,21 +138,25 @@
                 responseMessage.textContent = result || 'Job added successfully!';
                 // Clear form
                 document.getElementById('title').value = '';
-                document.getElementById('salary').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('minSalary').value = '';
+                document.getElementById('maxSalary').value = '';
                 document.getElementById('location').value = '';
+                // Refresh job list
+                fetchJobs();
             } else {
                 const error = await response.text();
                 responseMessage.className = 'mt-4 text-center text-sm text-red-600';
                 responseMessage.textContent = `Error: ${error || response.statusText}`;
-                if (response.status === 405) {
-                    responseMessage.textContent = 'Error: Method Not Allowed. Check if POST is supported for /jobs.';
-                }
             }
         } catch (error) {
             responseMessage.className = 'mt-4 text-center text-sm text-red-600';
             responseMessage.textContent = `Error: ${error.message}`;
         }
     });
+
+    // Load jobs on page load
+    fetchJobs();
 </script>
 </body>
 </html>

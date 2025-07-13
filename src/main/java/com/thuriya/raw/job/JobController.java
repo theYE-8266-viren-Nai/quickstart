@@ -12,7 +12,7 @@ public class JobController {
 		this.jobService = jobService;
 	}
 
-	private  JobService jobService;
+	private  JobService jobService;	
 	@GetMapping(path = "/jobs")
 	public List<Job> findAll() {
 		return jobService.findAll();
@@ -23,4 +23,10 @@ public class JobController {
 		jobService.createJob(job);
 		return "Job added successfully";
 	}
+	@GetMapping("/jobs/{id}")
+	public Job getJobById(@PathVariable Long id){
+		Job job = jobService.getJobById(id);
+		return job;
+	}
+
 }

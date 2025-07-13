@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Listings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+<!-- Job Listings Section -->
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6 text-center">Available Job Listings</h1>
+    <div id="jobList" class="grid gap-4"></div>
+</div>
+
+<!-- Modal for Job Details -->
+<div id="jobModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 class="text-xl font-bold mb-4">Job Details</h2>
+        <div id="jobDetails" class="space-y-2">
+            <p><strong>Title:</strong> <span id="modalTitle"></span></p>
+            <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+            <p><strong>Salary:</strong> $<span id="modalMinSalary"></span> - $<span id="modalMaxSalary"></span></p>
+            <p><strong>Location:</strong> <span id="modalLocation"></span></p>
+        </div>
+        <button id="closeModal" class="mt-4 w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Close</button>
+    </div>
+</div>
+
+<script>
+    // Fetch and display all jobs
+    async function fetchJobs() {
+        const jobList = document.getElementById('jobList');
+        jobList.innerHTML = '<p class="text-center text-gray-500">Loading jobs...</p>';
+
+        try {
+            const response = await fetch('http://localhost:8080/jobs', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.ok) {
+                const jobs = await response.json();
+                jobList.innerHTML = '';
+
+                if (jobs.length === 0) {
+                    jobList.innerHTML = '<p class="text-center text-gray-500">No jobs available.</p>';
+                    return;
+                }
+
+                jobs.forEach(job => {
+                    const jobCard = document.createElement('div');
+                    jobCard.className = 'bg-white p-6 rounded-lg shadow-md';
+                    jobCard.innerHTML = `
+                        <h3 class="text-lg font-semibold">${job.title}</h3>
+                        <p class="text-gray-600">${job.description.substring(0, 100)}${job.description.length > 100 ? '...' : ''}</p>
+                        <p class="text-gray-600">Salary: $${job.minSalary} - $${job.maxSalary}</p>
+                        <p class="text-gray-600">Location: ${job.location}</p>
+                        <button class="mt-2 text-blue-600 hover:underline" onclick="fetchJobById(${job.id})">View Details</button>
+                    `;
+                    jobList.appendChild(jobCard);
+                });
+            } else {
+                jobList.innerHTML = '<p class="text-center text-red-600">Error loading jobs.</p>';
+            }
+        } catch (error) {
+            jobList.innerHTML = `<p class="text-center text-red-600">Error: ${error.message}</p>`;
+        }
+    }
+
+    // Fetch job by ID and show in modal
+    async function fetchJobById(id) {
+        try {
+            const response = await fetch(`http://localhost:8080/jobs/${id}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.ok) {
+                const job = await response.json();
+                document.getElementById('modalTitle').textContent = job.title;
+                document.getElementById('modalDescription').textContent = job.description;
+                document.getElementById('modalMinSalary').textContent = job.minSalary;
+                document.getElementById('modalMaxSalary').textContent = job.maxSalary;
+                document.getElementById('modalLocation').textContent = job.location;
+                document.getElementById('jobModal').classList.remove('hidden');
+            } else {
+                alert('Error fetching job details.');
+            }
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    // Close modal
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('jobModal').classList.add('hidden');
+    });
+
+    // Load jobs on page load
+    fetchJobs();
+</script>
+</body>
+</html>
