@@ -13,7 +13,7 @@ public class JobController {
 	public JobController(JobService jobService) {
 		this.jobService = jobService;
 	}
-	private  JobService jobService;	
+	private  JobService jobService;
 	@GetMapping(path = "/jobs")
 	public ResponseEntity <List<Job>> findAll()
 	{
@@ -40,6 +40,15 @@ public class JobController {
 			return new ResponseEntity<> ("Job deleted successfully" , HttpStatus.OK);
 		}
 		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+	@PutMapping("/jobs/{id}")
+	public ResponseEntity<String> updateJob(@PathVariable Long id, @RequestBody Job updatedJob) {
+		boolean updated = jobService.updateJob(id, updatedJob);
+		if (updated) {
+			return new ResponseEntity<>("Job Updated successfully", HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
 	}
 
 }
